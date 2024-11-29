@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>User Delete Account</title>
+        <script
+            src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+        <!-- <script src="https://unpkg.com/@supabase/supabase-js@2"></script> -->
+        <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .logo-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .logo {
+            max-width: 150px;
+            max-height: 100px;
+        }
+        .input-container {
+            position: relative;
+            margin: 10px 0;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            padding-right: 40px;
+        }
+        .password-toggle {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #999;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #d32f2f;
+        }
+        .error {
+            color: red;
+            font-size: 0.8em;
+            margin-top: -10px;
+            margin-bottom: 10px;
+        }
+    </style>
+    </head>
+    <body>
+        <div class="logo-container">
+            <img src="logo.png" alt="Company Logo" class="logo">
+        </div>
+
+        <form id="deleteForm">
+            <h2>Delete User Account</h2>
+            <div class="input-container">
+                <input type="email" id="email" placeholder="Enter your email"
+                    required>
+            </div>
+            <div class="input-container">
+                <input type="password" id="password"
+                    placeholder="Enter password" required>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round" class="password-toggle"
+                    onclick="togglePasswordVisibility('password')">
+                    <path
+                        d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+            </div>
+            <div class="input-container">
+                <input type="password" id="confirmPassword"
+                    placeholder="Confirm password" required>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round" class="password-toggle"
+                    onclick="togglePasswordVisibility('confirmPassword')">
+                    <path
+                        d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+            </div>
+            <div id="passwordError" class="error"></div>
+            <br>
+            <button type="button" onclick="deleteUser()">Delete Account</button>
+        </form>
+
+        <script type="module">
+      import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.46.2/+esm'
+        const supabase = createClient(
+            'https://cyeifwqfsdrqygqkfnvg.supabase.co', 
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN5ZWlmd3Fmc2RycXlncWtmbnZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzE0MDU3ODcsImV4cCI6MjA0Njk4MTc4N30.QwGuc3UrWiA-IeB7aeip39AUVy810QnauJGLspkcpDM'
+        )
+
+        function togglePasswordVisibility(inputId) {
+            const passwordInput = document.getElementById(inputId);
+            const icon = passwordInput.nextElementSibling;
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.innerHTML = `
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                `;
+            } else {
+                passwordInput.type = 'password';
+                icon.innerHTML = `
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                `;
+            }
+        }
+
+        function validateForm() {
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const passwordError = document.getElementById('passwordError');
+
+            if (password !== confirmPassword) {
+                passwordError.textContent = 'Passwords do not match';
+                return false;
+            }
+            
+            if (password.length < 8) {
+                passwordError.textContent = 'Password must be at least 8 characters long';
+                return false;
+            }
+
+            passwordError.textContent = '';
+            return true;
+        }
+
+        async function deleteUser() {
+            // First validate the form
+            if (!validateForm()) return;
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                // Step 1: Login with provided credentials
+                const { data, error: loginError } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                })
+
+                if (loginError) {
+                    throw loginError;
+                }
+
+                // Ensure we have a valid user
+                if (!data.user) {
+                    throw new Error('No authenticated user found');
+                }
+
+                // // Step 2: Delete the user using admin method
+
+let { deleteData, deleteError } = await supabase
+  .rpc('delete_user_auth')
+if (deleteError) console.error(deleteError)
+else console.log(data)
+
+
+
+
+                if (deleteError) {
+              console.error(deleteError)
+                    throw deleteError;
+                }
+
+                // Success: Show message and redirect
+                alert('User account deleted successfully');
+                // window.location.href = '/login';
+
+            } catch (error) {
+                console.error('User deletion error:', error);
+                alert(`Error: ${error.message}`);
+            }
+        }
+
+            // Expose functions to the global scope
+    window.togglePasswordVisibility = togglePasswordVisibility;
+    window.deleteUser = deleteUser;
+    </script>
+    </body>
+</html>
